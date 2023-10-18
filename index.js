@@ -5,16 +5,30 @@ const app = express()
 const mongoose = require('mongoose')
 const PORT = process.env.PORT
 const authRoutes = require('./Routes/AuthRoutes')
+const userRoutes = require('./Routes/UserRoutes')
+
 const {urlencoded} = require("express");
-const errorHandlerMiddleware = require('./Middlewares/errorHandler');
+const cookieParser = require('cookie-parser')
 const connectToDatabase = require('./Database/connect')
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimiter = require('express-rate-limit');
+const errorHandlerMiddleware = require('./Middlewares/errorHandler');
 
-
-
+app.use(
+    rateLimiter({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // limit each IP to 100 requests per windowMs
+    })
+);
 app.use(express.json());
-app.use(errorHandlerMiddleware);
-
+app.use(cookieParser(process.env.JWT_SECRET))
+app.use(helmet());
+app.use(cors());
 app.use('/api/', authRoutes)
+app.use('/api/users', userRoutes)
+
+app.use(errorHandlerMiddleware);
 
 const start = async ()=> {
     try {
