@@ -6,7 +6,7 @@ const mongoose = require('mongoose')
 const PORT = process.env.PORT
 const authRoutes = require('./Routes/AuthRoutes')
 const userRoutes = require('./Routes/UserRoutes')
-
+const mailRoutes = require('./Routes/MailRoutes')
 const {urlencoded} = require("express");
 const cookieParser = require('cookie-parser')
 const connectToDatabase = require('./Database/connect')
@@ -27,6 +27,7 @@ app.use(helmet());
 app.use(cors());
 app.use('/api/', authRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/mail', mailRoutes)
 
 app.use(errorHandlerMiddleware);
 

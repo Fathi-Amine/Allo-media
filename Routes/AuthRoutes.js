@@ -8,6 +8,6 @@ router.get('/dashboard', authMiddleware, dashboard)
 router.get('/logout', logout )
 router.post('/register',register)
 router.post('/login', login)
-router.get('/send', sendEmail)
+
 
 module.exports = router

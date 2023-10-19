@@ -1,24 +1,21 @@
-const nodemailer = require('nodemailer')
+const {BadRequestErrorClass,UnauthenticatedErrorClass} = require('../Exceptions')
+const {StatusCodes} = require('http-status-codes')
+const {verifyToken} = require("../Utils/index");
+const User = require("../Models/Users")
+const jwt = require('jsonwebtoken')
 
-const sendEmail = async (req, res)=>{
-    let testAccount = await nodemailer.createTestAccount()
-    const transporter = nodemailer.createTransport({
-        host: process.env.MAIL_HOST,
-        port: process.env.MAIL_PORT,
-        auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASSWORD
-        }
-    });
-
-    let info = await transporter.sendMail({
-        from: '"AlloMedia" <allomedia@gmail.com',
-        to: 'bar@example.com',
-        subject: 'Hello',
-        html: '<button>Verify</button>'
-    })
-
-    res.json(info)
+const verifyEmail = async(req,res)=>{
+    const verificationToken = req.query.token
+    const {email} = jwt.verify(verificationToken,process.env.JWT_SECRET)
+    const user = await User.findOne({email})
+    console.log(user._id)
+    if(!user){
+        throw new UnauthenticatedErrorClass("Verification failed")
+    }
+    const updatedUser = await User.findOneAndUpdate({_id: user._id},{isVerified:true,verified:Date.now(),verificationToken:""},{new:true,runValidators:true})
+    res.status(StatusCodes.OK).json({updatedUser})
 }
 
-module.exports = sendEmail
+module.exports = {
+    verifyEmail
+}

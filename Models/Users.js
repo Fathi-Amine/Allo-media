@@ -25,10 +25,12 @@ const UserSchema = new mongoose.Schema({
         required: [true, 'Please Provide a password'],
         minLength: 8,
     },
-    verified: {
+    verificationToken:String,
+    isVerified: {
         type: Boolean,
         default: false
-    }
+    },
+    verified:Date,
 })
 
 
