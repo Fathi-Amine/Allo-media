@@ -3,38 +3,30 @@ const {BadRequestErrorClass,UnauthenticatedErrorClass} = require('../Exceptions'
 const User = require('../Models/Users')
 const {StatusCodes} = require('http-status-codes')
 const bcrypt = require('bcryptjs')
-const {attachCookieToResponse} = require('../Utils/index')
+const {attachCookieToResponse,createTokenUser} = require('../Utils/index')
 
 const register = async (req, res)=>{
     const user = await User.create({...req.body})
-    const userToken = {name: user.username, userId: user._id}
-    // const token = genToken({payload: userToken})
+    const userToken = createTokenUser(user)
     attachCookieToResponse({res,user:userToken})
     res.status(StatusCodes.CREATED).json({user:{name: user.username}})
 }
 const login = async (req, res,next)=>{
     const {email, password} = req.body
     if (!email|| !password){
-        // const error = new BadRequestErrorClass("Please Provide an email and password");
-        // return res.status(error.status).json({message: error.message})
         throw new BadRequestErrorClass("Please Provide an email and password")
     }
     const user = await User.findOne({email})
     if(!user){
-        // const error = new UnauthenticatedErrorClass();
-        // return res.status(error.status).json({message: error.message})
         throw new UnauthenticatedErrorClass("Invalid Credentials")
     }
 
     const isPasswordCorrect = await user.comparePassword(password)
 
     if(!isPasswordCorrect){
-        // const error = new UnauthenticatedErrorClass("Invalid Credentials");
-        // return res.status(error.status).json({message: error.message})
         throw new UnauthenticatedErrorClass("Invalid Credentials")
     }
-    const userToken = {name: user.username, userId: user._id, email:user.email}
-    // const token = genToken({payload: userToken})
+    const userToken = createTokenUser(user)
     attachCookieToResponse({res,user:userToken})
     res.status(StatusCodes.OK).json({userToken})
 }
