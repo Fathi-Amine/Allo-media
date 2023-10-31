@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken')
 const {BadRequestErrorClass,UnauthenticatedErrorClass} = require('../Exceptions')
 const User = require('../Models/Users')
 const Token = require('../Models/TokenModel')
+const assignRolesToUser = require('./RoleController')
 const {StatusCodes} = require('http-status-codes')
 const bcrypt = require('bcryptjs')
 const {attachCookieToResponse,createTokenUser,sendVerificationEmail,sendResetPasswordEmail} = require('../Utils/index')
@@ -11,13 +12,22 @@ const crypto = require('crypto')
 
 const register = async (req, res)=>{
     const origin = req.get('origin')
-    const {username,email} = req.body
+    const {username,email,status } = req.body
+
+    let role = '';
+
+    if (status === 1) {
+        role = 'manager';
+    }else if (status === 2){
+        role = 'delivery';
+    }else if(status === 3){
+        role = 'client'
+    }
 
     const userToken = {name: username, email:email}
-    const verificationToken = jwt.sign({name: username, email:email}, process.env.JWT_SECRET, {expiresIn: '10m'})
+    const verificationToken = jwt.sign(userToken, process.env.JWT_SECRET, {expiresIn: '10m'})
     const user = await User.create({...req.body,verificationToken})
-    // /*const userToken = createTokenUser(user)
-    // attachCookieToResponse({res,user:userToken})*/
+    await assignRolesToUser(user._id, role);
     await sendVerificationEmail({username,email,verificationToken,origin})
     res.status(StatusCodes.CREATED).json({msg: 'Success! Please check your email for verification'})
 }
@@ -26,7 +36,7 @@ const login = async (req, res,next)=>{
     if (!email|| !password){
         throw new BadRequestErrorClass("Please Provide an email and password")
     }
-    const user = await User.findOne({email})
+    const user = await User.findOne({email}).populate('roles')
     if(!user){
         throw new UnauthenticatedErrorClass("Invalid Credentials")
     }
@@ -40,6 +50,11 @@ const login = async (req, res,next)=>{
     if(!isVerified){
         throw new UnauthenticatedErrorClass("Please verify your email first")
     }
+    const userResponse = {
+        name: user.username,
+        email: user.email,
+        role: user.roles[0].name,
+    };
     const tokenUser = createTokenUser(user)
     let refreshToken = ""
     const existingToken = await Token.findOne({user:user._id})
@@ -50,7 +65,7 @@ const login = async (req, res,next)=>{
         }
         refreshToken = existingToken.refreshToken
         attachCookieToResponse({res,user:tokenUser,refreshToken})
-        res.status(StatusCodes.OK).json({user:tokenUser})
+        res.status(StatusCodes.OK).json({user:userResponse})
         return;
     }
     refreshToken = crypto.randomBytes(40).toString('hex')
@@ -59,7 +74,7 @@ const login = async (req, res,next)=>{
     const userToken = {refreshToken,ip,userAgent,user:user._id}
     await Token.create(userToken)
     attachCookieToResponse({res,user:tokenUser,refreshToken})
-    res.status(StatusCodes.OK).json({user:tokenUser})
+    res.status(StatusCodes.OK).json({user:userResponse})
 }
 
 const dashboard = async (req, res)=>{
@@ -84,6 +99,7 @@ const logout = async (req,res)=>{
 
 const forgotPassword = async (req,res)=>{
     const {email} = req.body
+    console.log(email)
     if (!email){
         throw new BadRequestErrorClass("Please Provide Valid Email")
     }

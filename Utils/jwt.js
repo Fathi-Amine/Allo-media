@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const {StatusCodes} = require("http-status-codes");
+
 const genToken = ({payload})=>{
     return jwt.sign(payload, process.env.JWT_SECRET)
 }

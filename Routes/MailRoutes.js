@@ -4,7 +4,7 @@ const authMiddleware = require('../Middlewares/authMiddleware')
 const {sendEmail,verifyEmail} = require('../Controllers/Email')
 
 // const nodemailer = require('nodemailer')
-router.get('/verify-email', verifyEmail)
+router.post('/verify-email', verifyEmail)
 
 
 module.exports = router

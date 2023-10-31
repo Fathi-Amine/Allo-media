@@ -1,6 +1,6 @@
 const  {default:mongoose} = require('mongoose')
 
-const connectToDatabase =  (url) => {
+const connectToDatabase =  async(url) => {
     try {
         return mongoose.connect(url);
     } catch (error) {

@@ -36,7 +36,13 @@ const UserSchema = new mongoose.Schema({
     },
     passwordTokenExpirationDate:{
         type:Date
-    }
+    },
+    roles: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Role',
+        },
+    ],
 })
 
 
